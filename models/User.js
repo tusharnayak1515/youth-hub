@@ -57,7 +57,9 @@ const UserSchema = new Schema({
     bio: {
         type: String,
         default: null
-    }
+    },
+    createdAt: Number,
+    updatedAt: Number
 });
 
 const User = mongoose.model('user', UserSchema);

@@ -9,9 +9,11 @@ const port = 5000;
 
 connectToMongo();
 app.use(cors());
+app.use(express.json());
 
-// app.use();
-// app.use();
+app.use("/api/auth", require('./routes/auth.js'));
+app.use("/api/posts", require('./routes/post.js'));
+app.use("/api/message", require('./routes/message.js'));
 
 app.listen(port, ()=> {
     console.log(`Server started successfully at port ${port}`);
