@@ -84,7 +84,7 @@ router.post("/login",[
         let user = await User.findOne({email: email});
         if(!user) {
             success = false;
-            return res.json({success, error: "No account is associated with this email!", status: 400});
+            return res.json({success, error: "No account is found with this email!", status: 400});
         }
 
         const passwordCompare = await bcrypt.compare(password, user.password);

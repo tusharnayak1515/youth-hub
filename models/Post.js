@@ -15,10 +15,16 @@ const PostSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'user'
     },
-    reviews: [
+    likes: [
         {
             type: Schema.Types.ObjectId,
-            ref: 'review'
+            ref: 'user'
+        }
+    ],
+    comments: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'comment'
         }
     ],
     createdAt: Number,
