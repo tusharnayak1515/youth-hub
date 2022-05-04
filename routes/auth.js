@@ -68,9 +68,7 @@ router.post("/register",[
 // ROUTE-2: Login an existing user using POST "/api/auth/login". Login not required
 router.post("/login",[
     body("email", "Enter a valid email!").isEmail(),
-    body("password", "Password cannot be less than 8 characters and must contain atleast 1 uppercase, 1 lowercase, number and special character")
-        .isLength({min: 8})
-        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])/)
+    body("password", "Password cannot be empty!").exists()
 ], async (req,res)=> {
     let success = false;
     const {email,password} = req.body;
@@ -125,6 +123,98 @@ router.get("/profile", fetchUser, async (req,res)=> {
             return res.json({success, error: "User not found!", status: 400});
         }
 
+        success = true;
+        return res.json({success, user, status: 200});
+    } catch (error) {
+        success = false;
+        return res.json({success, error: error.message, status: 500})
+    }
+});
+
+// ROUTE-4: Edit user profile using PUT "/api/auth/edit-profile". Login required
+router.put("/edit-profile", fetchUser,[
+    body("name", "Name cannot be less than 5 characters!").isLength({min: 5}),
+    body("username", "Username cannot be less than 5 characters!").isLength({min: 5}),
+    body("email", "Enter a valid email!").isEmail(),
+], async (req,res)=> {
+    let success = false;
+    const userId = req.user.id;
+    const {name,username,email} = req.body;
+
+    const errors = validationResult(req);
+    if(!errors.isEmpty()) {
+        success = false;
+        return res.json({success, error: errors.array()[0].msg, status: 400});
+    }
+
+    try {
+        let user = await User.findById(userId);
+        if(!user) {
+            success = false;
+            return res.json({success, error: "User not found!", status: 400});
+        }
+
+        let updateduser = {
+            name: user.name,
+            username: user.username,
+            email: user.email
+        }
+
+        if(name !== user.name) {
+            updateduser.name = name;
+        }
+
+        if(username !== user.username) {
+            updateduser.username = username;
+        }
+
+        if(email !== user.email) {
+            updateduser.email = email;
+        }
+
+        let userUsername = await User.findOne({username: updateduser.username});
+        if(userUsername) {
+            success = false;
+            return res.json({success, error: "This username is already taken!", status: 400});
+        }
+
+        let userEmail = await User.findOne({email: updateduser.email});
+        if(userEmail) {
+            success = false;
+            return res.json({success, error: "This email is associated to another account!", status: 400});
+        }
+
+        user = await User.findByIdAndUpdate(userId, {name: updateduser.name, username: updateduser.username, email: updateduser.email}, {new: true});
+        success = true;
+        return res.json({success, user, status: 200});
+    } catch (error) {
+        success = false;
+        return res.json({success, error: error.message, status: 500})
+    }
+});
+
+// ROUTE-5: Add profile picture using PUT "/api/auth/add-dp". Login required
+router.put("/add-dp", fetchUser,[
+    body("image", "Image cannot be empty!").exists()
+], async (req,res)=> {
+    let success = false;
+    const userId = req.user.id;
+    const {image} = req.body;
+
+    const errors = validationResult(req);
+    if(!errors.isEmpty()) {
+        success = false;
+        return res.json({success, error: errors.array()[0].msg, status: 400});
+    }
+
+    try {
+        let user = await User.findById(userId);
+        if(!user) {
+            success = false;
+            return res.json({success, error: "User not found!", status: 400});
+        }
+
+        user = await User.findByIdAndUpdate(userId, {profilepic: image}, {new: true});
         success = true;
         return res.json({success, user, status: 200});
     } catch (error) {

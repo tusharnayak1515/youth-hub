@@ -36,23 +36,9 @@ const UserSchema = new Schema({
             ref: 'post'
         }
     ],
-    messages: [
-        {
-            user: {
-                type: Schema.Types.ObjectId,
-                ref: 'user'
-            },
-            msg: [
-                {
-                    type: Schema.Types.ObjectId,
-                    ref: 'message'
-                }
-            ]
-        }
-    ],
     profilepic: {
         type: String,
-        default: null
+        default: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460__340.png"
     },
     bio: {
         type: String,

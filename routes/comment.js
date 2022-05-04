@@ -24,7 +24,7 @@ router.get("/",fetchUser,async (req,res)=> {
     }
 });
 
-//ROUTE-3: Add a comment using POST "/api/reviews/addreview". Login Required.
+//ROUTE-2: Add a comment using POST "/api/reviews/addreview". Login Required.
 router.post("/addcomment/:postId",fetchUser,[
     body("comment","You cannot post an empty comment").replace(/\s/g,'').trim().isLength({min:1})
 ],async (req,res)=> {
