@@ -170,11 +170,10 @@ router.delete("/deletecomment/:postId/:commentId",fetchUser,async (req,res)=> {
     }
 });
 
-// ROUTE-5: Like a comment using PUT "/api/posts/likecomment/:postId/:commentId". Login required.
-router.put("/likecomment/:postId/:commentId",fetchUser, async (req,res)=> {
+// ROUTE-5: Like a comment using PUT "/api/posts/likecomment/:commentId". Login required.
+router.put("/likecomment/:commentId",fetchUser, async (req,res)=> {
     let success = false;
     const userId = req.user.id;
-    const postId = req.params.postId;
     const commentId = req.params.commentId;
 
     try {
@@ -182,12 +181,6 @@ router.put("/likecomment/:postId/:commentId",fetchUser, async (req,res)=> {
         if(!user) {
             success = false;
             return res.json({success, error: "User not found!", status: 404});
-        }
-
-        let post = await Post.findById(postId);
-        if(!post) {
-            success = false;
-            return res.json({success, error: "Post not found!", status: 404});
         }
 
         let comment = await Comment.findById(commentId);
@@ -210,8 +203,8 @@ router.put("/likecomment/:postId/:commentId",fetchUser, async (req,res)=> {
     }
 });
 
-// ROUTE-6: Unlike a comment using PUT "/api/posts/unlikecomment/:postId/:commentId". Login required.
-router.put("/unlikecomment/:postId/:commentId",fetchUser, async (req,res)=> {
+// ROUTE-6: Unlike a comment using PUT "/api/posts/unlikecomment/:commentId". Login required.
+router.put("/unlikecomment/:commentId",fetchUser, async (req,res)=> {
     let success = false;
     const userId = req.user.id;
     const postId = req.params.postId;
@@ -222,12 +215,6 @@ router.put("/unlikecomment/:postId/:commentId",fetchUser, async (req,res)=> {
         if(!user) {
             success = false;
             return res.json({success, error: "User not found!", status: 404});
-        }
-
-        let post = await Post.findById(postId);
-        if(!post) {
-            success = false;
-            return res.json({success, error: "Post not found!", status: 404});
         }
         
         let comment = await Comment.findById(commentId);
