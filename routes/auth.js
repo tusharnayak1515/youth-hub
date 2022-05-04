@@ -297,17 +297,19 @@ router.put("/unfollow/:id", fetchUser, async (req,res)=> {
             success = false;
             return res.json({success, error: "User not found!", status: 404});
         }
-        
-        if(user.following.includes(followeduser)) {
-            user = await User.findByIdAndUpdate(userId,{$pull: {following: followeduser}},{new: true});
+
+        if(user.following.includes(followeduser._id)) {
+            console.log("yes");
+            user = await User.findByIdAndUpdate(userId,{$pull: {following: followeduser._id}},{new: true});
         }
         else {
             success = false;
             return res.json({success, error: "You are not following this user!", status: 400});
         }
 
-        if(followeduser.followers.includes(user)) {
-            followeduser = await User.findByIdAndUpdate(followeduserId,{$pull: {followers: user}},{new: true});
+        if(followeduser.followers.includes(user._id)) {
+            console.log("yes 2");
+            followeduser = await User.findByIdAndUpdate(followeduserId,{$pull: {followers: user._id}},{new: true});
         }
         else {
             success = false;
@@ -341,12 +343,12 @@ router.delete("/deleteuser", fetchUser, async (req,res)=> {
 
         for(let i=0; i<user.followers.length; i++) {
             let id = user.followers[i]._id.toString();
-            let follower = await User.findByIdAndUpdate(id,{$pull: {following: user}},{new: true});
+            let follower = await User.findByIdAndUpdate(id,{$pull: {following: user._id}},{new: true});
         }
 
         for(let i=0; i<user.following.length; i++) {
             let id = user.following[i]._id.toString();
-            let following = await User.findByIdAndUpdate(id,{$pull: {followers: user}},{new: true});
+            let following = await User.findByIdAndUpdate(id,{$pull: {followers: user._id}},{new: true});
         }
         
         let posts = await Post.deleteMany({user: userId});
