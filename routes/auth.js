@@ -186,7 +186,10 @@ router.put("/edit-profile", fetchUser,[
             return res.json({success, error: "This email is associated to another account!", status: 400});
         }
 
-        user = await User.findByIdAndUpdate(userId, {name: updateduser.name, username: updateduser.username, email: updateduser.email}, {new: true});
+        user = await User.findByIdAndUpdate(userId, {name: updateduser.name, username: updateduser.username, email: updateduser.email}, {new: true})
+            .populate("followers", "_id name username profilepic")
+            .populate("following", "_id name username profilepic")
+            .populate("posts", "_id images caption");
         success = true;
         return res.json({success, user, status: 200});
     } catch (error) {
@@ -213,10 +216,13 @@ router.put("/add-dp", fetchUser,[
         let user = await User.findById(userId);
         if(!user) {
             success = false;
-            return res.json({success, error: "User not found!", status: 400});
+            return res.json({success, error: "User not found!", status: 404});
         }
 
-        user = await User.findByIdAndUpdate(userId, {profilepic: image}, {new: true});
+        user = await User.findByIdAndUpdate(userId, {profilepic: image}, {new: true})
+            .populate("followers", "_id name username profilepic")
+            .populate("following", "_id name username profilepic")
+            .populate("posts", "_id images caption");
         success = true;
         return res.json({success, user, status: 200});
     } catch (error) {
@@ -225,7 +231,103 @@ router.put("/add-dp", fetchUser,[
     }
 });
 
-// ROUTE-6: Delete an existing user account using DELETE "/api/auth/deleteuser". Login required
+// ROUTE-6: Follow a user account using PUT "/api/auth/follow/:id". Login required
+router.put("/follow/:id", fetchUser, async (req,res)=> {
+    let success = false;
+    const userId = req.user.id;
+    const followeduserId = req.params.id;
+
+    try {
+        let user = await User.findById(userId);
+        if(!user) {
+            success = false;
+            return res.json({success, error: "User not found!", status: 404});
+        }
+
+        let followeduser = await User.findById(followeduserId);
+        if(!followeduser) {
+            success = false;
+            return res.json({success, error: "User not found!", status: 404});
+        }
+        
+        if(!user.following.includes(followeduser)) {
+            user = await User.findByIdAndUpdate(userId,{$push: {following: followeduser}},{new: true});
+        }
+        else {
+            success = false;
+            return res.json({success, error: "You are already following this user!", status: 400});
+        }
+
+        if(!followeduser.followers.includes(user)) {
+            followeduser = await User.findByIdAndUpdate(followeduserId,{$push: {followers: user}},{new: true});
+        }
+        else {
+            success = false;
+            return res.json({success, error: "You are already following this user!", status: 400});
+        }
+
+        user = await User.findById(userId)
+            .populate("followers", "_id name username profilepic")
+            .populate("following", "_id name username profilepic")
+            .populate("posts", "_id images caption");
+
+        success = true;
+        return res.json({success, user, status: 200});
+    } catch (error) {
+        success = false;
+        return res.json({success, error: error.message, status: 500})
+    }
+});
+
+// ROUTE-7: Unfollow a user account using PUT "/api/auth/unfollow/:id". Login required
+router.put("/unfollow/:id", fetchUser, async (req,res)=> {
+    let success = false;
+    const userId = req.user.id;
+    const followeduserId = req.params.id;
+
+    try {
+        let user = await User.findById(userId);
+        if(!user) {
+            success = false;
+            return res.json({success, error: "User not found!", status: 404});
+        }
+
+        let followeduser = await User.findById(followeduserId);
+        if(!followeduser) {
+            success = false;
+            return res.json({success, error: "User not found!", status: 404});
+        }
+        
+        if(user.following.includes(followeduser)) {
+            user = await User.findByIdAndUpdate(userId,{$pull: {following: followeduser}},{new: true});
+        }
+        else {
+            success = false;
+            return res.json({success, error: "You are not following this user!", status: 400});
+        }
+
+        if(followeduser.followers.includes(user)) {
+            followeduser = await User.findByIdAndUpdate(followeduserId,{$pull: {followers: user}},{new: true});
+        }
+        else {
+            success = false;
+            return res.json({success, error: "You are not following this user!", status: 400});
+        }
+
+        user = await User.findById(userId)
+            .populate("followers", "_id name username profilepic")
+            .populate("following", "_id name username profilepic")
+            .populate("posts", "_id images caption");
+
+        success = true;
+        return res.json({success, user, status: 200});
+    } catch (error) {
+        success = false;
+        return res.json({success, error: error.message, status: 500})
+    }
+});
+
+// ROUTE-8: Delete an existing user account using DELETE "/api/auth/deleteuser". Login required
 router.delete("/deleteuser", fetchUser, async (req,res)=> {
     let success = false;
     const userId = req.user.id;
@@ -235,6 +337,16 @@ router.delete("/deleteuser", fetchUser, async (req,res)=> {
         if(!user) {
             success = false;
             return res.json({success, error: "User not found!", status: 400});
+        }
+
+        for(let i=0; i<user.followers.length; i++) {
+            let id = user.followers[i]._id.toString();
+            let follower = await User.findByIdAndUpdate(id,{$pull: {following: user}},{new: true});
+        }
+
+        for(let i=0; i<user.following.length; i++) {
+            let id = user.following[i]._id.toString();
+            let following = await User.findByIdAndUpdate(id,{$pull: {followers: user}},{new: true});
         }
         
         let posts = await Post.deleteMany({user: userId});
