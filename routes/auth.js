@@ -250,7 +250,7 @@ router.put("/follow/:id", fetchUser, async (req,res)=> {
             return res.json({success, error: "User not found!", status: 404});
         }
         
-        if(!user.following.includes(followeduser)) {
+        if(!user.following.includes(followeduser._id)) {
             user = await User.findByIdAndUpdate(userId,{$push: {following: followeduser}},{new: true});
         }
         else {
@@ -258,7 +258,7 @@ router.put("/follow/:id", fetchUser, async (req,res)=> {
             return res.json({success, error: "You are already following this user!", status: 400});
         }
 
-        if(!followeduser.followers.includes(user)) {
+        if(!followeduser.followers.includes(user._id)) {
             followeduser = await User.findByIdAndUpdate(followeduserId,{$push: {followers: user}},{new: true});
         }
         else {
