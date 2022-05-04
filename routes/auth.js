@@ -7,6 +7,8 @@ const secret = process.env.JWT_SECRET;
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const fetchUser = require('../middlewares/fetchUser');
+const Post = require('../models/Post');
+const Comment = require('../models/Comment');
 
 const router = express.Router();
 
@@ -217,6 +219,30 @@ router.put("/add-dp", fetchUser,[
         user = await User.findByIdAndUpdate(userId, {profilepic: image}, {new: true});
         success = true;
         return res.json({success, user, status: 200});
+    } catch (error) {
+        success = false;
+        return res.json({success, error: error.message, status: 500})
+    }
+});
+
+// ROUTE-6: Delete an existing user account using DELETE "/api/auth/deleteuser". Login required
+router.delete("/deleteuser", fetchUser, async (req,res)=> {
+    let success = false;
+    const userId = req.user.id;
+
+    try {
+        let user = await User.findById(userId);
+        if(!user) {
+            success = false;
+            return res.json({success, error: "User not found!", status: 400});
+        }
+        
+        let posts = await Post.deleteMany({user: userId});
+        let comments = await Comment.deleteMany({user: userId});
+        user = await User.findByIdAndDelete(userId, {new: true});
+
+        success = true;
+        return res.json({success, msg: "User Successfully deleted!", status: 200});
     } catch (error) {
         success = false;
         return res.json({success, error: error.message, status: 500})
