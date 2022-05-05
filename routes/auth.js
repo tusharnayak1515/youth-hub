@@ -63,7 +63,7 @@ router.post("/register",[
         return res.json({success, authToken, status: 200});
     } catch (error) {
         success = false;
-        return res.json({success, error: error.message, status: 500})
+        return res.json({success, error: error.message, status: 500});
     }
 });
 
@@ -104,7 +104,7 @@ router.post("/login",[
         return res.json({success, authToken, status: 200});
     } catch (error) {
         success = false;
-        return res.json({success, error: error.message, status: 500})
+        return res.json({success, error: error.message, status: 500});
     }
 });
 
@@ -129,7 +129,7 @@ router.get("/profile", fetchUser, async (req,res)=> {
         return res.json({success, user, status: 200});
     } catch (error) {
         success = false;
-        return res.json({success, error: error.message, status: 500})
+        return res.json({success, error: error.message, status: 500});
     }
 });
 
@@ -194,7 +194,7 @@ router.put("/edit-profile", fetchUser,[
         return res.json({success, user, status: 200});
     } catch (error) {
         success = false;
-        return res.json({success, error: error.message, status: 500})
+        return res.json({success, error: error.message, status: 500});
     }
 });
 
@@ -227,7 +227,7 @@ router.put("/add-dp", fetchUser,[
         return res.json({success, user, status: 200});
     } catch (error) {
         success = false;
-        return res.json({success, error: error.message, status: 500})
+        return res.json({success, error: error.message, status: 500});
     }
 });
 
@@ -275,7 +275,7 @@ router.put("/follow/:id", fetchUser, async (req,res)=> {
         return res.json({success, user, status: 200});
     } catch (error) {
         success = false;
-        return res.json({success, error: error.message, status: 500})
+        return res.json({success, error: error.message, status: 500});
     }
 });
 
@@ -299,7 +299,6 @@ router.put("/unfollow/:id", fetchUser, async (req,res)=> {
         }
 
         if(user.following.includes(followeduser._id)) {
-            console.log("yes");
             user = await User.findByIdAndUpdate(userId,{$pull: {following: followeduser._id}},{new: true});
         }
         else {
@@ -308,7 +307,6 @@ router.put("/unfollow/:id", fetchUser, async (req,res)=> {
         }
 
         if(followeduser.followers.includes(user._id)) {
-            console.log("yes 2");
             followeduser = await User.findByIdAndUpdate(followeduserId,{$pull: {followers: user._id}},{new: true});
         }
         else {
@@ -325,7 +323,7 @@ router.put("/unfollow/:id", fetchUser, async (req,res)=> {
         return res.json({success, user, status: 200});
     } catch (error) {
         success = false;
-        return res.json({success, error: error.message, status: 500})
+        return res.json({success, error: error.message, status: 500});
     }
 });
 
@@ -359,7 +357,29 @@ router.delete("/deleteuser", fetchUser, async (req,res)=> {
         return res.json({success, msg: "User Successfully deleted!", status: 200});
     } catch (error) {
         success = false;
-        return res.json({success, error: error.message, status: 500})
+        return res.json({success, error: error.message, status: 500});
+    }
+});
+
+// ROUTE-9: Get user suggestions using GET "/api/auth/getsuggestion". Login required
+router.get("/getsuggestion", fetchUser, async (req,res)=> {
+    let success = false;
+    const userId = req.user.id;
+
+    try {
+        let user = await User.findById(userId);
+        if(!user) {
+            success = false;
+            return res.json({success, error: "User not found!", status: 400});
+        }
+
+        let suggestions = await User.find({_id: {$ne: userId} ,followers: {$ne: userId}});
+
+        success = true;
+        return res.json({success, suggestions, status: 200});
+    } catch (error) {
+        success = false;
+        return res.json({success, error: error.message, status: 500});
     }
 });
 
