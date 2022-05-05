@@ -15,6 +15,7 @@ require('./models/User');
 require('./models/Post');
 require('./models/Comment');
 require('./models/Message');
+require('./models/Conversation');
 
 app.use("/api/auth", require('./routes/auth.js'));
 app.use("/api/posts", require('./routes/post.js'));

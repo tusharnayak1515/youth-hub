@@ -2,6 +2,10 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const MessageSchema = new Schema({
+    conversation: { 
+        type: mongoose.Types.ObjectId,
+        ref: "conversation" 
+    },
     text: {
         type: String
     },

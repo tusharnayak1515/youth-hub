@@ -2,6 +2,8 @@
 
 const express = require('express');
 const fetchUser = require('../middlewares/fetchUser');
+const Conversation = require('../models/Conversation');
+const Coversation = require('../models/Conversation');
 const Message = require('../models/Message');
 const User = require('../models/User');
 
@@ -31,7 +33,30 @@ router.get("/",fetchUser, async (req,res)=> {
     }
 });
 
-// ROUTE-2: Send message using POST "/api/message/:receiverId". Login required.
+// ROUTE-2: Fetch all converstations using GET "/api/message/conversations". Login required.
+router.get("/conversations",fetchUser, async (req,res)=> {
+    let success = false;
+    const userId = req.user.id;
+    try {
+        let user = await User.findById(userId);
+        if(!user) {
+            success = false;
+            return res.json({success, error: "User not found!", status: 404});
+        }
+
+        const conversations = await Conversation.find()
+            .populate("recipients", "_id name username profilepic")
+            .sort("-updatedAt");
+
+        success = true;
+        return res.json({success, conversations, status: 200});
+    } catch (error) {
+        success = false;
+        return res.json({success,error: error.message, status: 500})
+    }
+});
+
+// ROUTE-3: Send message using POST "/api/message/:receiverId". Login required.
 router.post("/:receiverId",fetchUser, async (req,res)=> {
     let success = false;
     const userId = req.user.id;
@@ -50,7 +75,28 @@ router.post("/:receiverId",fetchUser, async (req,res)=> {
             return res.json({success, error: "Reciever not found!", status: 404});
         }
 
+        if(text === undefined && images === undefined) {
+            success = false;
+            return res.json({success, error: "You cannot send a message without text or images!", status: 400});
+        }
+
+        const newConversation = await Coversation.findOneAndUpdate(
+            {
+                $or: [
+                    {recipients: [userId, receiver._id.toString()]},
+                    {recipients: [receiver._id.toString(), userId]}
+                ]
+            },
+            {
+                recipients: [userId, receiver._id.toString()],
+                text,
+                images
+            },
+            {new: true, upsert: true}
+        );
+
         let mymessage = {
+            conversation: newConversation._id,
             sender: user,
             receiver: receiver
         };
