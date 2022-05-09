@@ -24,7 +24,6 @@ router.get("/msg/:receiverId",fetchUser, async (req,res)=> {
         const messages = await Message.find({$or: [{$and: [{sender: userId}, {receiver: receiverId}]},{$and: [{sender: receiverId}, {receiver: userId}]}] })
             .populate("sender", "_id name username profilepic")
             .populate("receiver", "_id name username profilepic");
-            // .sort("-createdAt");
 
         success = true;
         return res.json({success, messages, status: 200});
@@ -112,10 +111,16 @@ router.post("/:receiverId",fetchUser, async (req,res)=> {
 
         let message = await Message.create(mymessage);
 
-        const messages = await Message.find()
+        message = await Message.findById(message._id)
+            .populate("conversation", "recipients")
             .populate("sender", "_id name username profilepic")
             .populate("receiver", "_id name username profilepic")
             .sort("-createdAt");
+
+        const messages = await Message.find()
+            .populate("sender", "_id name username profilepic")
+            .populate("receiver", "_id name username profilepic");
+            // .sort("-createdAt");
 
         success = true;
         return res.json({success, messages, message, status: 200});
