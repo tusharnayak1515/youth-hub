@@ -211,7 +211,7 @@ router.put("/unlikepost/:postId",fetchUser, async (req,res)=> {
             return res.json({success, error: "Post not found!", status: 404});
         }
         
-        post = await Post.findByIdAndUpdate(postId,{$pull: {likes: user}},{new: true});
+        post = await Post.findByIdAndUpdate(postId,{$pull: {likes: userId}},{new: true});
 
         const posts = await Post.find()
             .populate("user", "_id name username profilepic")

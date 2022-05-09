@@ -10,9 +10,10 @@ const User = require('../models/User');
 const router = express.Router();
 
 // ROUTE-1: Fetch all messages using GET "/api/message/". Login required.
-router.get("/",fetchUser, async (req,res)=> {
+router.get("/msg/:receiverId",fetchUser, async (req,res)=> {
     let success = false;
     const userId = req.user.id;
+    const receiverId = req.params.receiverId;
     try {
         let user = await User.findById(userId);
         if(!user) {
@@ -20,10 +21,10 @@ router.get("/",fetchUser, async (req,res)=> {
             return res.json({success, error: "User not found!", status: 404});
         }
 
-        const messages = await Message.find()
+        const messages = await Message.find({$or: [{$and: [{sender: userId}, {receiver: receiverId}]},{$and: [{sender: receiverId}, {receiver: userId}]}] })
             .populate("sender", "_id name username profilepic")
-            .populate("receiver", "_id name username profilepic")
-            .sort("-createdAt");
+            .populate("receiver", "_id name username profilepic");
+            // .sort("-createdAt");
 
         success = true;
         return res.json({success, messages, status: 200});
@@ -83,12 +84,12 @@ router.post("/:receiverId",fetchUser, async (req,res)=> {
         const newConversation = await Coversation.findOneAndUpdate(
             {
                 $or: [
-                    {recipients: [userId, receiver._id.toString()]},
-                    {recipients: [receiver._id.toString(), userId]}
+                    {recipients: [user._id, receiver._id]},
+                    {recipients: [receiver._id, userId]}
                 ]
             },
             {
-                recipients: [userId, receiver._id.toString()],
+                recipients: [user._id, receiver._id],
                 text,
                 images
             },
@@ -97,8 +98,8 @@ router.post("/:receiverId",fetchUser, async (req,res)=> {
 
         let mymessage = {
             conversation: newConversation._id,
-            sender: user,
-            receiver: receiver
+            sender: user._id,
+            receiver: receiver._id
         };
 
         if(text) {

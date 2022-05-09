@@ -141,7 +141,7 @@ router.put("/edit-profile", fetchUser,[
 ], async (req,res)=> {
     let success = false;
     const userId = req.user.id;
-    const {name,username,email} = req.body;
+    const {name,username,email,profilepic,bio} = req.body;
 
     const errors = validationResult(req);
     if(!errors.isEmpty()) {
@@ -157,36 +157,43 @@ router.put("/edit-profile", fetchUser,[
         }
 
         let updateduser = {
-            name: user.name,
-            username: user.username,
-            email: user.email
+            name: name,
+            username: username,
+            email: email,
+            profilepic: user.profilepic,
+            bio: user.bio
         }
 
-        if(name !== user.name) {
-            updateduser.name = name;
+        if(profilepic && profilepic !== user.profilepic) {
+            updateduser.profilepic = profilepic;
         }
+
+        if(bio && bio !== user.bio) {
+            updateduser.bio = bio;
+        }
+
+        let userUsername = null;
+        let userEmail = null;
 
         if(username !== user.username) {
-            updateduser.username = username;
+            userUsername = await User.findOne({username: updateduser.username});
         }
 
         if(email !== user.email) {
-            updateduser.email = email;
+            userEmail = await User.findOne({email: updateduser.email});
         }
-
-        let userUsername = await User.findOne({username: updateduser.username});
+        
         if(userUsername) {
             success = false;
             return res.json({success, error: "This username is already taken!", status: 400});
         }
-
-        let userEmail = await User.findOne({email: updateduser.email});
+        
         if(userEmail) {
             success = false;
             return res.json({success, error: "This email is associated to another account!", status: 400});
         }
 
-        user = await User.findByIdAndUpdate(userId, {name: updateduser.name, username: updateduser.username, email: updateduser.email}, {new: true})
+        user = await User.findByIdAndUpdate(userId, {name: updateduser.name, username: updateduser.username, email: updateduser.email, profilepic: updateduser.profilepic, bio: updateduser.bio}, {new: true})
             .populate("followers", "_id name username profilepic")
             .populate("following", "_id name username profilepic")
             .populate("posts", "_id images caption");
@@ -382,5 +389,31 @@ router.get("/getsuggestion", fetchUser, async (req,res)=> {
         return res.json({success, error: error.message, status: 500});
     }
 });
+
+// ROUTE-10: Search for users by their name using: GET "/api/auth/users/:name". Require Login
+router.get(
+    "/users/:name",fetchUser,
+    async (req, res) => {
+      let success = false;
+      try {
+        const userId = req.user.id;
+        let user = await User.findById(userId);
+        if (!user) {
+          success = false;
+          res.send({ success, error: "Not Found", status: 404 });
+        }
+  
+        const name = req.params.name;
+        let users = await User.find({name: new RegExp(name,'i')});
+  
+        success = true;
+        return res.json({success, users, status: 200});
+        
+      } catch (error) {
+        success = false;
+        res.send({ success, error: error.message, status: 500 });
+      }
+    }
+  );
 
 module.exports = router;
