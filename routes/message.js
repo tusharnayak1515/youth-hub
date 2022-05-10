@@ -10,10 +10,13 @@ const User = require('../models/User');
 const router = express.Router();
 
 // ROUTE-1: Fetch all messages using GET "/api/message/". Login required.
-router.get("/msg/:receiverId",fetchUser, async (req,res)=> {
+router.get("/msg/:senderId/:receiverId",fetchUser, async (req,res)=> {
     let success = false;
     const userId = req.user.id;
     const receiverId = req.params.receiverId;
+    const senderId = req.params.senderId;
+    // console.log("senderid: ",senderId);
+    // console.log("receiverid: ",receiverId);
     try {
         let user = await User.findById(userId);
         if(!user) {
@@ -21,7 +24,12 @@ router.get("/msg/:receiverId",fetchUser, async (req,res)=> {
             return res.json({success, error: "User not found!", status: 404});
         }
 
-        const messages = await Message.find({$or: [{$and: [{sender: userId}, {receiver: receiverId}]},{$and: [{sender: receiverId}, {receiver: userId}]}] })
+        if(receiverId === senderId) {
+            success = false;
+            return res.json({success, error: "You cannot send message to yourself!", status: 400});
+        }
+
+        const messages = await Message.find({$or: [{$and: [{sender: senderId}, {receiver: receiverId}]},{$and: [{sender: receiverId}, {receiver: senderId}]}] })
             .populate("sender", "_id name username profilepic")
             .populate("receiver", "_id name username profilepic");
 
@@ -57,16 +65,25 @@ router.get("/conversations",fetchUser, async (req,res)=> {
 });
 
 // ROUTE-3: Send message using POST "/api/message/:receiverId". Login required.
-router.post("/:receiverId",fetchUser, async (req,res)=> {
+router.post("/:senderId/:receiverId",fetchUser, async (req,res)=> {
     let success = false;
     const userId = req.user.id;
     const receiverId = req.params.receiverId;
+    const senderId = req.params.senderId;
     const {text,images} = req.body;
+    console.log("senderid: ",senderId);
+    console.log("receiverid: ",receiverId);
     try {
         let user = await User.findById(userId);
         if(!user) {
             success = false;
             return res.json({success, error: "User not found!", status: 404});
+        }
+
+        let sender = await User.findById(senderId);
+        if(!sender) {
+            success = false;
+            return res.json({success, error: "Sender not found!", status: 404});
         }
 
         let receiver = await User.findById(receiverId);
@@ -80,15 +97,20 @@ router.post("/:receiverId",fetchUser, async (req,res)=> {
             return res.json({success, error: "You cannot send a message without text or images!", status: 400});
         }
 
+        if(senderId === receiverId) {
+            success = false;
+            return res.json({success, error: "You cannot send message to yourself!", status: 400});
+        }
+
         const newConversation = await Coversation.findOneAndUpdate(
             {
                 $or: [
-                    {recipients: [user._id, receiver._id]},
-                    {recipients: [receiver._id, userId]}
+                    {recipients: [sender._id, receiver._id]},
+                    {recipients: [receiver._id, sender._id]}
                 ]
             },
             {
-                recipients: [user._id, receiver._id],
+                recipients: [sender._id, receiver._id],
                 text,
                 images
             },
@@ -97,7 +119,7 @@ router.post("/:receiverId",fetchUser, async (req,res)=> {
 
         let mymessage = {
             conversation: newConversation._id,
-            sender: user._id,
+            sender: sender._id,
             receiver: receiver._id
         };
 
