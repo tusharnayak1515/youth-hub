@@ -71,8 +71,8 @@ router.post("/:senderId/:receiverId",fetchUser, async (req,res)=> {
     const receiverId = req.params.receiverId;
     const senderId = req.params.senderId;
     const {text,images} = req.body;
-    console.log("senderid: ",senderId);
-    console.log("receiverid: ",receiverId);
+    // console.log("senderid: ",senderId);
+    // console.log("receiverid: ",receiverId);
     try {
         let user = await User.findById(userId);
         if(!user) {
