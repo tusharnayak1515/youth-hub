@@ -398,7 +398,7 @@ router.get("/users/:name", fetchUser, async (req, res) => {
         let user = await User.findById(userId);
         if (!user) {
             success = false;
-            res.send({ success, error: "Not Found", status: 404 });
+            return res.json({ success, error: "Not Found", status: 404 });
         }
 
         const name = req.params.name;
@@ -409,7 +409,7 @@ router.get("/users/:name", fetchUser, async (req, res) => {
 
     } catch (error) {
         success = false;
-        res.send({ success, error: error.message, status: 500 });
+        return res.json({ success, error: error.message, status: 500 });
     }
 }
 );
@@ -424,13 +424,13 @@ router.get("/user/:id", fetchUser, async (req, res) => {
         let user = await User.findById(userId);
         if (!user) {
             success = false;
-            res.send({ success, error: "Not Found", status: 404 });
+            return res.json({ success, error: "Not Found", status: 404 });
         }
 
         let otherUser = await User.findById(otherId);
         if (!otherUser) {
             success = false;
-            res.send({ success, error: "Not Found", status: 404 });
+            return res.json({ success, error: "Not Found", status: 404 });
         }
 
         success = true;
@@ -438,7 +438,7 @@ router.get("/user/:id", fetchUser, async (req, res) => {
 
     } catch (error) {
         success = false;
-        res.send({ success, error: error.message, status: 500 });
+        return res.json({ success, error: error.message, status: 500 });
     }
 }
 );
