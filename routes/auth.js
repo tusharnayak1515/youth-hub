@@ -13,37 +13,37 @@ const Comment = require('../models/Comment');
 const router = express.Router();
 
 // ROUTE-1: Register a user using POST "/api/auth/register". Login not required
-router.post("/register",[
-    body("name", "Name cannot be less than 5 characters!").isLength({min: 5}),
-    body("username", "Username cannot be less than 5 characters!").isLength({min: 5}),
+router.post("/register", [
+    body("name", "Name cannot be less than 5 characters!").isLength({ min: 5 }),
+    body("username", "Username cannot be less than 5 characters!").isLength({ min: 5 }),
     body("email", "Enter a valid email!").isEmail(),
     body("password", "Password cannot be less than 8 characters and must contain atleast 1 uppercase, 1 lowercase, number and special character")
-        .isLength({min: 8})
+        .isLength({ min: 8 })
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])/)
-], async (req,res)=> {
+], async (req, res) => {
     let success = false;
-    const {name,username,email,password} = req.body;
+    const { name, username, email, password } = req.body;
     const errors = validationResult(req);
-    if(!errors.isEmpty()) {
+    if (!errors.isEmpty()) {
         success = false;
-        return res.json({success, error: errors.array()[0].msg, status: 400});
+        return res.json({ success, error: errors.array()[0].msg, status: 400 });
     }
 
     try {
-        let userEmail = await User.findOne({email: email});
-        if(userEmail) {
+        let userEmail = await User.findOne({ email: email });
+        if (userEmail) {
             success = false;
-            return res.json({success, error: "This email is associated to another account!", status: 400})
+            return res.json({ success, error: "This email is associated to another account!", status: 400 })
         }
 
-        let userUsername = await User.findOne({username: username});
-        if(userUsername) {
+        let userUsername = await User.findOne({ username: username });
+        if (userUsername) {
             success = false;
-            return res.json({success, error: "This username is already taken!", status: 400})
+            return res.json({ success, error: "This username is already taken!", status: 400 })
         }
 
         const salt = await bcrypt.genSalt(10);
-        const securePassword = await bcrypt.hash(password,salt);
+        const securePassword = await bcrypt.hash(password, salt);
 
         let user = await User.create({
             name: name,
@@ -60,37 +60,37 @@ router.post("/register",[
 
         const authToken = jwt.sign(data, secret);
         success = true;
-        return res.json({success, authToken, status: 200});
+        return res.json({ success, authToken, status: 200 });
     } catch (error) {
         success = false;
-        return res.json({success, error: error.message, status: 500});
+        return res.json({ success, error: error.message, status: 500 });
     }
 });
 
 // ROUTE-2: Login an existing user using POST "/api/auth/login". Login not required
-router.post("/login",[
+router.post("/login", [
     body("email", "Enter a valid email!").isEmail(),
     body("password", "Password cannot be empty!").exists()
-], async (req,res)=> {
+], async (req, res) => {
     let success = false;
-    const {email,password} = req.body;
+    const { email, password } = req.body;
     const errors = validationResult(req);
-    if(!errors.isEmpty()) {
+    if (!errors.isEmpty()) {
         success = false;
-        return res.json({success, error: errors.array()[0].msg, status: 400});
+        return res.json({ success, error: errors.array()[0].msg, status: 400 });
     }
 
     try {
-        let user = await User.findOne({email: email});
-        if(!user) {
+        let user = await User.findOne({ email: email });
+        if (!user) {
             success = false;
-            return res.json({success, error: "No account is found with this email!", status: 400});
+            return res.json({ success, error: "No account is found with this email!", status: 400 });
         }
 
         const passwordCompare = await bcrypt.compare(password, user.password);
-        if(!passwordCompare) {
+        if (!passwordCompare) {
             success = false;
-            return res.json({success, error: "Wrong credentials!", status: 400});
+            return res.json({ success, error: "Wrong credentials!", status: 400 });
         }
 
         const data = {
@@ -101,15 +101,15 @@ router.post("/login",[
 
         const authToken = jwt.sign(data, secret);
         success = true;
-        return res.json({success, authToken, status: 200});
+        return res.json({ success, authToken, status: 200 });
     } catch (error) {
         success = false;
-        return res.json({success, error: error.message, status: 500});
+        return res.json({ success, error: error.message, status: 500 });
     }
 });
 
 // ROUTE-3: Get user profile using GET "/api/auth/profile". Login required
-router.get("/profile", fetchUser, async (req,res)=> {
+router.get("/profile", fetchUser, async (req, res) => {
     let success = false;
     const userId = req.user.id;
     try {
@@ -117,43 +117,43 @@ router.get("/profile", fetchUser, async (req,res)=> {
             .populate("followers", "_id name username profilepic")
             .populate("following", "_id name username profilepic")
             .populate("posts", "_id images caption");
-            // .populate("posts.user", "_id name username profilepic")
-            // .populate("posts.reviews", "_id comment")
-            // .populate("posts.reviews.user", "_id name username profilepic")
-        if(!user) {
+        // .populate("posts.user", "_id name username profilepic")
+        // .populate("posts.reviews", "_id comment")
+        // .populate("posts.reviews.user", "_id name username profilepic")
+        if (!user) {
             success = false;
-            return res.json({success, error: "User not found!", status: 400});
+            return res.json({ success, error: "User not found!", status: 400 });
         }
 
         success = true;
-        return res.json({success, user, status: 200});
+        return res.json({ success, user, status: 200 });
     } catch (error) {
         success = false;
-        return res.json({success, error: error.message, status: 500});
+        return res.json({ success, error: error.message, status: 500 });
     }
 });
 
 // ROUTE-4: Edit user profile using PUT "/api/auth/edit-profile". Login required
-router.put("/edit-profile", fetchUser,[
-    body("name", "Name cannot be less than 5 characters!").isLength({min: 5}),
-    body("username", "Username cannot be less than 5 characters!").isLength({min: 5}),
+router.put("/edit-profile", fetchUser, [
+    body("name", "Name cannot be less than 5 characters!").isLength({ min: 5 }),
+    body("username", "Username cannot be less than 5 characters!").isLength({ min: 5 }),
     body("email", "Enter a valid email!").isEmail(),
-], async (req,res)=> {
+], async (req, res) => {
     let success = false;
     const userId = req.user.id;
-    const {name,username,email,profilepic,bio} = req.body;
+    const { name, username, email, profilepic, bio } = req.body;
 
     const errors = validationResult(req);
-    if(!errors.isEmpty()) {
+    if (!errors.isEmpty()) {
         success = false;
-        return res.json({success, error: errors.array()[0].msg, status: 400});
+        return res.json({ success, error: errors.array()[0].msg, status: 400 });
     }
 
     try {
         let user = await User.findById(userId);
-        if(!user) {
+        if (!user) {
             success = false;
-            return res.json({success, error: "User not found!", status: 400});
+            return res.json({ success, error: "User not found!", status: 400 });
         }
 
         let updateduser = {
@@ -164,113 +164,113 @@ router.put("/edit-profile", fetchUser,[
             bio: user.bio
         }
 
-        if(profilepic && profilepic !== user.profilepic) {
+        if (profilepic && profilepic !== user.profilepic) {
             updateduser.profilepic = profilepic;
         }
 
-        if(bio && bio !== user.bio) {
+        if (bio && bio !== user.bio) {
             updateduser.bio = bio;
         }
 
         let userUsername = null;
         let userEmail = null;
 
-        if(username !== user.username) {
-            userUsername = await User.findOne({username: updateduser.username});
+        if (username !== user.username) {
+            userUsername = await User.findOne({ username: updateduser.username });
         }
 
-        if(email !== user.email) {
-            userEmail = await User.findOne({email: updateduser.email});
-        }
-        
-        if(userUsername) {
-            success = false;
-            return res.json({success, error: "This username is already taken!", status: 400});
-        }
-        
-        if(userEmail) {
-            success = false;
-            return res.json({success, error: "This email is associated to another account!", status: 400});
+        if (email !== user.email) {
+            userEmail = await User.findOne({ email: updateduser.email });
         }
 
-        user = await User.findByIdAndUpdate(userId, {name: updateduser.name, username: updateduser.username, email: updateduser.email, profilepic: updateduser.profilepic, bio: updateduser.bio}, {new: true})
+        if (userUsername) {
+            success = false;
+            return res.json({ success, error: "This username is already taken!", status: 400 });
+        }
+
+        if (userEmail) {
+            success = false;
+            return res.json({ success, error: "This email is associated to another account!", status: 400 });
+        }
+
+        user = await User.findByIdAndUpdate(userId, { name: updateduser.name, username: updateduser.username, email: updateduser.email, profilepic: updateduser.profilepic, bio: updateduser.bio }, { new: true })
             .populate("followers", "_id name username profilepic")
             .populate("following", "_id name username profilepic")
             .populate("posts", "_id images caption");
         success = true;
-        return res.json({success, user, status: 200});
+        return res.json({ success, user, status: 200 });
     } catch (error) {
         success = false;
-        return res.json({success, error: error.message, status: 500});
+        return res.json({ success, error: error.message, status: 500 });
     }
 });
 
 // ROUTE-5: Add profile picture using PUT "/api/auth/add-dp". Login required
-router.put("/add-dp", fetchUser,[
+router.put("/add-dp", fetchUser, [
     body("image", "Image cannot be empty!").exists()
-], async (req,res)=> {
+], async (req, res) => {
     let success = false;
     const userId = req.user.id;
-    const {image} = req.body;
+    const { image } = req.body;
 
     const errors = validationResult(req);
-    if(!errors.isEmpty()) {
+    if (!errors.isEmpty()) {
         success = false;
-        return res.json({success, error: errors.array()[0].msg, status: 400});
+        return res.json({ success, error: errors.array()[0].msg, status: 400 });
     }
 
     try {
         let user = await User.findById(userId);
-        if(!user) {
+        if (!user) {
             success = false;
-            return res.json({success, error: "User not found!", status: 404});
+            return res.json({ success, error: "User not found!", status: 404 });
         }
 
-        user = await User.findByIdAndUpdate(userId, {profilepic: image}, {new: true})
+        user = await User.findByIdAndUpdate(userId, { profilepic: image }, { new: true })
             .populate("followers", "_id name username profilepic")
             .populate("following", "_id name username profilepic")
             .populate("posts", "_id images caption");
         success = true;
-        return res.json({success, user, status: 200});
+        return res.json({ success, user, status: 200 });
     } catch (error) {
         success = false;
-        return res.json({success, error: error.message, status: 500});
+        return res.json({ success, error: error.message, status: 500 });
     }
 });
 
 // ROUTE-6: Follow a user account using PUT "/api/auth/follow/:id". Login required
-router.put("/follow/:id", fetchUser, async (req,res)=> {
+router.put("/follow/:id", fetchUser, async (req, res) => {
     let success = false;
     const userId = req.user.id;
     const followeduserId = req.params.id;
 
     try {
         let user = await User.findById(userId);
-        if(!user) {
+        if (!user) {
             success = false;
-            return res.json({success, error: "User not found!", status: 404});
+            return res.json({ success, error: "User not found!", status: 404 });
         }
 
         let followeduser = await User.findById(followeduserId);
-        if(!followeduser) {
+        if (!followeduser) {
             success = false;
-            return res.json({success, error: "User not found!", status: 404});
-        }
-        
-        if(!user.following.includes(followeduser._id)) {
-            user = await User.findByIdAndUpdate(userId,{$push: {following: followeduser}},{new: true});
-        }
-        else {
-            success = false;
-            return res.json({success, error: "You are already following this user!", status: 400});
+            return res.json({ success, error: "User not found!", status: 404 });
         }
 
-        if(!followeduser.followers.includes(user._id)) {
-            followeduser = await User.findByIdAndUpdate(followeduserId,{$push: {followers: user}},{new: true});
+        if (!user.following.includes(followeduser._id)) {
+            user = await User.findByIdAndUpdate(userId, { $push: { following: followeduser } }, { new: true });
         }
         else {
             success = false;
-            return res.json({success, error: "You are already following this user!", status: 400});
+            return res.json({ success, error: "You are already following this user!", status: 400 });
+        }
+
+        if (!followeduser.followers.includes(user._id)) {
+            followeduser = await User.findByIdAndUpdate(followeduserId, { $push: { followers: user } }, { new: true });
+        }
+        else {
+            success = false;
+            return res.json({ success, error: "You are already following this user!", status: 400 });
         }
 
         user = await User.findById(userId)
@@ -279,46 +279,46 @@ router.put("/follow/:id", fetchUser, async (req,res)=> {
             .populate("posts", "_id images caption");
 
         success = true;
-        return res.json({success, user, status: 200});
+        return res.json({ success, user, status: 200 });
     } catch (error) {
         success = false;
-        return res.json({success, error: error.message, status: 500});
+        return res.json({ success, error: error.message, status: 500 });
     }
 });
 
 // ROUTE-7: Unfollow a user account using PUT "/api/auth/unfollow/:id". Login required
-router.put("/unfollow/:id", fetchUser, async (req,res)=> {
+router.put("/unfollow/:id", fetchUser, async (req, res) => {
     let success = false;
     const userId = req.user.id;
     const followeduserId = req.params.id;
 
     try {
         let user = await User.findById(userId);
-        if(!user) {
+        if (!user) {
             success = false;
-            return res.json({success, error: "User not found!", status: 404});
+            return res.json({ success, error: "User not found!", status: 404 });
         }
 
         let followeduser = await User.findById(followeduserId);
-        if(!followeduser) {
+        if (!followeduser) {
             success = false;
-            return res.json({success, error: "User not found!", status: 404});
+            return res.json({ success, error: "User not found!", status: 404 });
         }
 
-        if(user.following.includes(followeduser._id)) {
-            user = await User.findByIdAndUpdate(userId,{$pull: {following: followeduser._id}},{new: true});
+        if (user.following.includes(followeduser._id)) {
+            user = await User.findByIdAndUpdate(userId, { $pull: { following: followeduser._id } }, { new: true });
         }
         else {
             success = false;
-            return res.json({success, error: "You are not following this user!", status: 400});
+            return res.json({ success, error: "You are not following this user!", status: 400 });
         }
 
-        if(followeduser.followers.includes(user._id)) {
-            followeduser = await User.findByIdAndUpdate(followeduserId,{$pull: {followers: user._id}},{new: true});
+        if (followeduser.followers.includes(user._id)) {
+            followeduser = await User.findByIdAndUpdate(followeduserId, { $pull: { followers: user._id } }, { new: true });
         }
         else {
             success = false;
-            return res.json({success, error: "You are not following this user!", status: 400});
+            return res.json({ success, error: "You are not following this user!", status: 400 });
         }
 
         user = await User.findById(userId)
@@ -327,93 +327,120 @@ router.put("/unfollow/:id", fetchUser, async (req,res)=> {
             .populate("posts", "_id images caption");
 
         success = true;
-        return res.json({success, user, status: 200});
+        return res.json({ success, user, status: 200 });
     } catch (error) {
         success = false;
-        return res.json({success, error: error.message, status: 500});
+        return res.json({ success, error: error.message, status: 500 });
     }
 });
 
 // ROUTE-8: Delete an existing user account using DELETE "/api/auth/deleteuser". Login required
-router.delete("/deleteuser", fetchUser, async (req,res)=> {
+router.delete("/deleteuser", fetchUser, async (req, res) => {
     let success = false;
     const userId = req.user.id;
 
     try {
         let user = await User.findById(userId);
-        if(!user) {
+        if (!user) {
             success = false;
-            return res.json({success, error: "User not found!", status: 400});
+            return res.json({ success, error: "User not found!", status: 400 });
         }
 
-        for(let i=0; i<user.followers.length; i++) {
+        for (let i = 0; i < user.followers.length; i++) {
             let id = user.followers[i]._id.toString();
-            let follower = await User.findByIdAndUpdate(id,{$pull: {following: user._id}},{new: true});
+            let follower = await User.findByIdAndUpdate(id, { $pull: { following: user._id } }, { new: true });
         }
 
-        for(let i=0; i<user.following.length; i++) {
+        for (let i = 0; i < user.following.length; i++) {
             let id = user.following[i]._id.toString();
-            let following = await User.findByIdAndUpdate(id,{$pull: {followers: user._id}},{new: true});
+            let following = await User.findByIdAndUpdate(id, { $pull: { followers: user._id } }, { new: true });
         }
-        
-        let posts = await Post.deleteMany({user: userId});
-        let comments = await Comment.deleteMany({user: userId});
-        user = await User.findByIdAndDelete(userId, {new: true});
+
+        let posts = await Post.deleteMany({ user: userId });
+        let comments = await Comment.deleteMany({ user: userId });
+        user = await User.findByIdAndDelete(userId, { new: true });
 
         success = true;
-        return res.json({success, msg: "User Successfully deleted!", status: 200});
+        return res.json({ success, msg: "User Successfully deleted!", status: 200 });
     } catch (error) {
         success = false;
-        return res.json({success, error: error.message, status: 500});
+        return res.json({ success, error: error.message, status: 500 });
     }
 });
 
 // ROUTE-9: Get user suggestions using GET "/api/auth/getsuggestion". Login required
-router.get("/getsuggestion", fetchUser, async (req,res)=> {
+router.get("/getsuggestion", fetchUser, async (req, res) => {
     let success = false;
     const userId = req.user.id;
 
     try {
         let user = await User.findById(userId);
-        if(!user) {
+        if (!user) {
             success = false;
-            return res.json({success, error: "User not found!", status: 400});
+            return res.json({ success, error: "User not found!", status: 400 });
         }
 
-        let suggestions = await User.find({_id: {$ne: userId} ,followers: {$ne: userId}});
+        let suggestions = await User.find({ _id: { $ne: userId }, followers: { $ne: userId } });
 
         success = true;
-        return res.json({success, suggestions, status: 200});
+        return res.json({ success, suggestions, status: 200 });
     } catch (error) {
         success = false;
-        return res.json({success, error: error.message, status: 500});
+        return res.json({ success, error: error.message, status: 500 });
     }
 });
 
 // ROUTE-10: Search for users by their name using: GET "/api/auth/users/:name". Require Login
-router.get(
-    "/users/:name",fetchUser,
-    async (req, res) => {
-      let success = false;
-      try {
+router.get("/users/:name", fetchUser, async (req, res) => {
+    let success = false;
+    try {
         const userId = req.user.id;
         let user = await User.findById(userId);
         if (!user) {
-          success = false;
-          res.send({ success, error: "Not Found", status: 404 });
+            success = false;
+            res.send({ success, error: "Not Found", status: 404 });
         }
-  
+
         const name = req.params.name;
-        let users = await User.find({name: new RegExp(name,'i')});
-  
+        let users = await User.find({ name: new RegExp(name, 'i') });
+
         success = true;
-        return res.json({success, users, status: 200});
-        
-      } catch (error) {
+        return res.json({ success, users, status: 200 });
+
+    } catch (error) {
         success = false;
         res.send({ success, error: error.message, status: 500 });
-      }
     }
-  );
+}
+);
+
+// ROUTE-11: Get other user profile using: GET "/api/auth/user/:id". Require Login
+router.get("/user/:id", fetchUser, async (req, res) => {
+    let success = false;
+    try {
+        const otherId = req.params.id;
+        const userId = req.user.id;
+
+        let user = await User.findById(userId);
+        if (!user) {
+            success = false;
+            res.send({ success, error: "Not Found", status: 404 });
+        }
+
+        let otherUser = await User.findById(otherId);
+        if (!otherUser) {
+            success = false;
+            res.send({ success, error: "Not Found", status: 404 });
+        }
+
+        success = true;
+        return res.json({ success, otherUser, status: 200 });
+
+    } catch (error) {
+        success = false;
+        res.send({ success, error: error.message, status: 500 });
+    }
+}
+);
 
 module.exports = router;
