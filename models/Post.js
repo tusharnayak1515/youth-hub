@@ -29,7 +29,7 @@ const PostSchema = new Schema({
     ],
     createdAt: Number,
     updatedAt: Number
-});
+},{timestamps: true});
 
 const Post = mongoose.model('post', PostSchema);
 module.exports = Post;

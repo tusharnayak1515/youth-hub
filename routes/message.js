@@ -152,4 +152,90 @@ router.post("/:senderId/:receiverId",fetchUser, async (req,res)=> {
     }
 });
 
+// ROUTE-4: Start a new conversation using POST "/api/message/newcnv/:senderId/:receiverId". Login required.
+router.post("/newcnv/:senderId/:receiverId",fetchUser, async (req,res)=> {
+    let success = false;
+    const userId = req.user.id;
+    const receiverId = req.params.receiverId;
+    const senderId = req.params.senderId;
+    // console.log("senderid: ",senderId);
+    // console.log("receiverid: ",receiverId);
+    try {
+        let user = await User.findById(userId);
+        if(!user) {
+            success = false;
+            return res.json({success, error: "User not found!", status: 404});
+        }
+
+        let sender = await User.findById(senderId);
+        if(!sender) {
+            success = false;
+            return res.json({success, error: "Sender not found!", status: 404});
+        }
+
+        let receiver = await User.findById(receiverId);
+        if(!receiver) {
+            success = false;
+            return res.json({success, error: "Reciever not found!", status: 404});
+        }
+
+        if(senderId === receiverId) {
+            success = false;
+            return res.json({success, error: "You cannot send message to yourself!", status: 400});
+        }
+
+        const convo = await Conversation.findOne(
+            {
+                $or: [
+                    {recipients: [sender._id, receiver._id]},
+                    {recipients: [receiver._id, sender._id]}
+                ]
+            }
+        );
+
+        if(convo) {
+            const conversations = await Conversation.find()
+            .populate("recipients", "_id name username about")
+            .sort("-updatedAt");
+
+            const messages = await Message.find()
+            .populate("sender", "_id name username about")
+            .populate("receiver", "_id name username about");
+            // .sort("-createdAt");
+            
+            success = true;
+            return res.json({success, messages, conversations, status: 200});
+        }
+
+        const newConversation = await Coversation.findOneAndUpdate(
+            {
+                $or: [
+                    {recipients: [sender._id, receiver._id]},
+                    {recipients: [receiver._id, sender._id]}
+                ]
+            },
+            {
+                recipients: [sender._id, receiver._id],
+                text: null
+            },
+            {new: true, upsert: true}
+        );
+
+        const conversations = await Conversation.find()
+            .populate("recipients", "_id name username about")
+            .sort("-updatedAt");
+
+        const messages = await Message.find()
+            .populate("sender", "_id name username about")
+            .populate("receiver", "_id name username about");
+            // .sort("-createdAt");
+
+        success = true;
+        return res.json({success, messages, conversations, status: 200});
+    } catch (error) {
+        success = false;
+        return res.json({success,error: error.message, status: 500})
+    }
+});
+
 module.exports = router;

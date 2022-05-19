@@ -67,8 +67,13 @@ router.post("/addcomment/:postId",fetchUser,[
             .populate("user", "_id name username profilepic")
             .populate("comments", "_id comment user");
 
+        const posts = await Post.find()
+            .populate("user", "_id name username profilepic")
+            .populate("comments", "_id comment user")
+            .populate("createdAt");
+
         success = true;
-        return res.json({success, post, comments, status: 200});
+        return res.json({success, posts, comments, status: 200});
     } catch (error) {
         success = false;
         return res.json({success, error: error.message, status: 500});
@@ -76,13 +81,12 @@ router.post("/addcomment/:postId",fetchUser,[
 });
 
 //ROUTE-3: Edit an existing comment using PUT "/api/comments/editcomment/:postId/:commentId". Login Required.
-router.put("/editcomment/:postId/:commentId",fetchUser,[
+router.put("/editcomment/:commentId",fetchUser,[
     body("comment","You cannot post an empty comment").replace(/\s/g,'').trim().isLength({min:1})
 ],async (req,res)=> {
     let success = false;
     const {comment} = req.body;
     const userId = req.user.id;
-    const postId = req.params.postId;
     const commentId = req.params.commentId;
 
     const errors = validationResult(req);
@@ -98,12 +102,6 @@ router.put("/editcomment/:postId/:commentId",fetchUser,[
             return res.json({success, error: "User not found", status: 404});
         }
 
-        let post = await Post.findById(postId);
-        if(!post) {
-            success = false;
-            return res.json({success, error: "Post not found", status: 404});
-        }
-
         let mycomment = await Comment.findById(commentId);
         if(!mycomment) {
             success = false;
@@ -116,8 +114,13 @@ router.put("/editcomment/:postId/:commentId",fetchUser,[
             .populate("user", "_id name username profilepic")
             .populate("post", "_id");
 
+        const posts = await Post.find()
+            .populate("user", "_id name username profilepic")
+            .populate("comments", "_id comment user")
+            .populate("createdAt");
+
         success = true;
-        return res.json({success, post, comments, status: 200});
+        return res.json({success, posts, comments, status: 200});
     } catch (error) {
         success = false;
         return res.json({success, error: error.message, status: 500});
@@ -150,7 +153,7 @@ router.delete("/deletecomment/:postId/:commentId",fetchUser,async (req,res)=> {
             return res.json({success, error: "Comment not found", status: 404});
         }
 
-        post = await Post.findByIdAndUpdate(postId,{$pull: {comments: comment}},{new: true});
+        post = await Post.findByIdAndUpdate(postId,{$pull: {comments: commentId}},{new: true});
 
         comment = await Comment.findByIdAndDelete(commentId,{new: true});
 
@@ -160,7 +163,8 @@ router.delete("/deletecomment/:postId/:commentId",fetchUser,async (req,res)=> {
 
         const posts = await Post.find()
             .populate("user", "_id name username profilepic")
-            .populate("comments", "_id comment user");
+            .populate("comments", "_id comment user")
+            .populate("createdAt");
 
         success = true;
         return res.json({success, posts, comments, status: 200});
@@ -189,7 +193,7 @@ router.put("/likecomment/:commentId",fetchUser, async (req,res)=> {
             return res.json({success, error: "Comment not found", status: 404});
         }
         
-        comment = await Post.findByIdAndUpdate(commentId,{$push: {likes: user}},{new: true});
+        comment = await Comment.findByIdAndUpdate(commentId,{$push: {likes: userId}},{new: true});
 
         const comments = await Comment.find()
             .populate("user", "_id name username profilepic")
@@ -207,7 +211,6 @@ router.put("/likecomment/:commentId",fetchUser, async (req,res)=> {
 router.put("/unlikecomment/:commentId",fetchUser, async (req,res)=> {
     let success = false;
     const userId = req.user.id;
-    const postId = req.params.postId;
     const commentId = req.params.commentId;
 
     try {
@@ -223,7 +226,7 @@ router.put("/unlikecomment/:commentId",fetchUser, async (req,res)=> {
             return res.json({success, error: "Comment not found", status: 404});
         }
         
-        comment = await Post.findByIdAndUpdate(commentId,{$pull: {likes: user}},{new: true});
+        comment = await Comment.findByIdAndUpdate(commentId,{$pull: {likes: userId}},{new: true});
 
         const comments = await Comment.find()
             .populate("user", "_id name username profilepic")

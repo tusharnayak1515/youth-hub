@@ -15,7 +15,8 @@ router.get("/",fetchUser, async (req,res)=> {
     try {
         let posts = await Post.find()
             .populate("user", "_id name username profilepic")
-            .populate("comments", "_id comment user");
+            .populate("comments", "_id comment user")
+            .populate("createdAt");
 
         success = true;
         return res.json({success, posts, status: 200});
@@ -74,8 +75,13 @@ router.post("/addpost",fetchUser,[
         
         user = await User.findByIdAndUpdate(userId,{$push: {posts: post}}, {new: true});
 
+        const posts = await Post.find()
+            .populate("user", "_id name username profilepic")
+            .populate("comments", "_id comment user")
+            .populate("createdAt");
+
         success = true;
-        return res.json({success, user, post, status: 200});
+        return res.json({success, user, posts, status: 200});
     } catch (error) {
         success = false;
         return res.json({success, error: error.message, status: 500});
@@ -83,7 +89,7 @@ router.post("/addpost",fetchUser,[
 });
 
 // ROUTE-3: Edit a post using PUT "/api/posts/editpost:postId". Login required.
-router.post("/editpost:postId",fetchUser,[
+router.post("/editpost/:postId",fetchUser,[
     body("images","You must add minimum 1 image to your post!").isArray({min: 1, max: 5})
 ], async (req,res)=> {
     let success = false;
@@ -114,7 +120,8 @@ router.post("/editpost:postId",fetchUser,[
 
         const posts = await Post.find()
             .populate("user", "_id name username profilepic")
-            .populate("comments", "_id comment user");
+            .populate("comments", "_id comment user")
+            .populate("createdAt");
 
         success = true;
         return res.json({success, posts, status: 200});
@@ -125,7 +132,7 @@ router.post("/editpost:postId",fetchUser,[
 });
 
 // ROUTE-4: Delete a post using DELETE "/api/posts/deletepost:postId". Login required.
-router.delete("/deletepost:postId",fetchUser, async (req,res)=> {
+router.delete("/deletepost/:postId",fetchUser, async (req,res)=> {
     let success = false;
     const userId = req.user.id;
     const postId = req.params.postId;
@@ -143,13 +150,14 @@ router.delete("/deletepost:postId",fetchUser, async (req,res)=> {
             return res.json({success, error: "Post not found!", status: 404});
         }
         
-        user = await User.findByIdAndUpdate(userId,{$pull: {posts: post}},{new: true});
+        user = await User.findByIdAndUpdate(userId,{$pull: {posts: postId}},{new: true});
         let comments = await Comment.deleteMany({post: postId});
         post = await Post.findByIdAndDelete(postId,{new: true});
 
         const posts = await Post.find()
             .populate("user", "_id name username profilepic")
-            .populate("comments", "_id comment user");
+            .populate("comments", "_id comment user")
+            .populate("createdAt");
 
         success = true;
         return res.json({success, user, posts, comments, status: 200});
@@ -182,7 +190,8 @@ router.put("/likepost/:postId",fetchUser, async (req,res)=> {
 
         const posts = await Post.find()
             .populate("user", "_id name username profilepic")
-            .populate("comments", "_id comment user");
+            .populate("comments", "_id comment user")
+            .populate("createdAt");
 
         success = true;
         return res.json({success, posts, status: 200});
@@ -215,7 +224,8 @@ router.put("/unlikepost/:postId",fetchUser, async (req,res)=> {
 
         const posts = await Post.find()
             .populate("user", "_id name username profilepic")
-            .populate("comments", "_id comment user");
+            .populate("comments", "_id comment user")
+            .populate("createdAt");
 
         success = true;
         return res.json({success, posts, status: 200});

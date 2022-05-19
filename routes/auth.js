@@ -15,7 +15,7 @@ const router = express.Router();
 // ROUTE-1: Register a user using POST "/api/auth/register". Login not required
 router.post("/register", [
     body("name", "Name cannot be less than 5 characters!").isLength({ min: 5 }),
-    body("username", "Username cannot be less than 5 characters!").isLength({ min: 5 }),
+    body("username", "Username cannot be less than 5 characters!").isLength({ min: 5, max: 15 }),
     body("email", "Enter a valid email!").isEmail(),
     body("password", "Password cannot be less than 8 characters and must contain atleast 1 uppercase, 1 lowercase, number and special character")
         .isLength({ min: 8 })
